@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">ADSL Monitor</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="username">username</string>
+    <string name="password">password</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>ipaddress
+    <string name="ipaddress">IP address</string>
+    <string name="buttontext">STOP</string>
+    <string name="buttontextstart">START</string>
+
+</resources>
