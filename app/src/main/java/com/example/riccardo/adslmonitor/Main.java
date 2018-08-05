@@ -100,7 +100,9 @@ public class Main extends AppCompatActivity {
     boolean SNRGraphUpdate = false;
     boolean QLNGraphUpdate = false;
     boolean BITGraphUpdate = false;
+
     final int NOTIFICATION_ID = 1;
+
     final int GRAPH_MAX_TIME = 60;
 
     //Credential stuffs
@@ -138,6 +140,7 @@ public class Main extends AppCompatActivity {
         dataSetDown.add(setCompDown);
         dataDown = new LineData(dataSetDown);
         chartDownSpeed.setData(dataDown);
+        themeLineSpeedDown(setCompDown);
         chartDownSpeed.invalidate(); // refresh
 
         //######################################################################### UP
@@ -151,6 +154,7 @@ public class Main extends AppCompatActivity {
         dataSetUp.add(setCompUp);
         dataUp = new LineData(dataSetUp);
         chartUpSpeed.setData(dataUp);
+        themeLineSpeedUp(setCompUp);
         chartUpSpeed.invalidate(); // refresh
 
         //######################################################################### HLOG
@@ -300,9 +304,9 @@ public class Main extends AppCompatActivity {
 
     public void onResume(){
         super.onResume();
-        readSpeed = new myAsyncTask();
-        loop = true;
-        readSpeed.execute();
+        //readSpeed = new myAsyncTask();
+        //loop = true;
+        //readSpeed.execute();
     }
 
     public void onStop() {
@@ -437,7 +441,7 @@ public class Main extends AppCompatActivity {
                 valsComp1.add(new Entry(tone, value));
             }
             LineDataSet setComp1 = new LineDataSet(valsComp1, "Hlog");
-            theme(setComp1);
+            themeLineaParams(setComp1);
 
             List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
             dataSets.add(setComp1);
@@ -474,7 +478,7 @@ public class Main extends AppCompatActivity {
                 valsComp1.add(new Entry(tone, value));
             }
             LineDataSet setComp1 = new LineDataSet(valsComp1, "SNR");
-            theme(setComp1);
+            themeLineaParams(setComp1);
 
             List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
             dataSets.add(setComp1);
@@ -511,7 +515,7 @@ public class Main extends AppCompatActivity {
             }
             LineDataSet setComp1 = new LineDataSet(valsComp1, "QLN");
 
-            theme(setComp1);
+            themeLineaParams(setComp1);
 
             List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
             dataSets.add(setComp1);
@@ -548,7 +552,7 @@ public class Main extends AppCompatActivity {
             }
             LineDataSet setComp1 = new LineDataSet(valsComp1, "BIT");
 
-            theme(setComp1);
+            themeLineaParams(setComp1);
 
             List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
             dataSets.add(setComp1);
@@ -558,7 +562,7 @@ public class Main extends AppCompatActivity {
             BITGraphUpdate = false;
         }
 
-        private void theme(LineDataSet setComp1) {
+        private void themeLineaParams(LineDataSet setComp1) {
             setComp1.setAxisDependency(YAxis.AxisDependency.LEFT);
             setComp1.setColor(Color.BLUE);
             setComp1.setCircleColor(Color.WHITE);
@@ -569,12 +573,11 @@ public class Main extends AppCompatActivity {
             setComp1.setDrawCircles(false);
             setComp1.setDrawCircleHole(false);
             setComp1.setHighlightEnabled(false);
-            setComp1.setFillColor(ColorTemplate.getHoloBlue());
             setComp1.setDrawValues(false);
             setComp1.setDrawFilled(false);
-            setComp1.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-            setComp1.setCubicIntensity(0.2f);
+            setComp1.setMode(LineDataSet.Mode.LINEAR);
         }
+
 
         public String loginShell(BufferedReader fromServer, OutputStream toServer, String user, String pass) {
 
@@ -651,24 +654,24 @@ public class Main extends AppCompatActivity {
 
                     LineData data = chartDownSpeed.getData();
                     if (data != null) {
-                        ILineDataSet set = data.getDataSetByIndex(0);
                         data.addEntry(new Entry(time, downValue), 0);
-                        //if (time > GRAPH_MAX_TIME)
-                        //    data.removeEntry(0, 0);
-                        data.notifyDataChanged();
-                        chartDownSpeed.notifyDataSetChanged();
+
+                        if (time > GRAPH_MAX_TIME)
+                            data.removeEntry(0, 0);
+
                         chartDownSpeed.moveViewToX(data.getEntryCount());
+                        chartDownSpeed.notifyDataSetChanged();
                     }
 
                     data = chartUpSpeed.getData();
                     if (data != null) {
-                        ILineDataSet set = data.getDataSetByIndex(0);
                         data.addEntry(new Entry(time, upValue), 0);
-                        //if (time > GRAPH_MAX_TIME)
-                        //    data.removeEntry(0, 0);
-                        data.notifyDataChanged();
-                        chartUpSpeed.notifyDataSetChanged();
+
+                        if (time > GRAPH_MAX_TIME)
+                            data.removeEntry(0, 0);
+
                         chartUpSpeed.moveViewToX(data.getEntryCount());
+                        chartUpSpeed.notifyDataSetChanged();
                     }
 
                     if (dataHlog != null && !HlogGraphUpdate) {
@@ -682,6 +685,7 @@ public class Main extends AppCompatActivity {
                     }
                     if (update > 0)
                         update--;
+                    time++;
                 }
             });
         }
@@ -698,4 +702,40 @@ public class Main extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private void themeLineSpeedDown(LineDataSet setComp1) {
+        setComp1.setAxisDependency(YAxis.AxisDependency.LEFT);
+        setComp1.setColor(Color.GREEN);
+        setComp1.setCircleColor(Color.GREEN);
+        setComp1.setLineWidth(2f);
+        setComp1.setCircleRadius(0);
+        setComp1.setCircleColor(Color.GREEN);
+        setComp1.setCircleColorHole(Color.GREEN);
+        setComp1.setDrawCircles(false);
+        setComp1.setDrawCircleHole(false);
+        setComp1.setHighlightEnabled(false);
+        setComp1.setFillColor(ColorTemplate.getHoloBlue());
+        setComp1.setDrawValues(false);
+        setComp1.setDrawFilled(false);
+        setComp1.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        setComp1.setCubicIntensity(0.2f);
+    }
+
+    private void themeLineSpeedUp(LineDataSet setComp1) {
+
+        setComp1.setAxisDependency(YAxis.AxisDependency.LEFT);
+        setComp1.setColor(Color.RED);
+        setComp1.setCircleColor(Color.RED);
+        setComp1.setLineWidth(2f);
+        setComp1.setCircleRadius(0);
+        setComp1.setCircleColor(Color.RED);
+        setComp1.setCircleColorHole(Color.RED);
+        setComp1.setDrawCircles(false);
+        setComp1.setDrawCircleHole(false);
+        setComp1.setHighlightEnabled(false);
+        setComp1.setFillColor(ColorTemplate.getHoloBlue());
+        setComp1.setDrawValues(false);
+        setComp1.setDrawFilled(false);
+        setComp1.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        setComp1.setCubicIntensity(0.2f);
+    }
 }

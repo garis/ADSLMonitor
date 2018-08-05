@@ -117,7 +117,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceSmall"
-                android:text="QLN"
+                android:text="BIT"
                 android:id="@+id/textViewBIT" />
 
             <com.github.mikephil.charting.charts.LineChart
