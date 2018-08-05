@@ -3,8 +3,10 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
-    <string name="username">username</string>
-    <string name="password">password</string>
+    <string name="username_ssh">username SSH</string>
+    <string name="password_ssh">password SSH</string>
+    <string name="username_sh">username SH</string>
+    <string name="password_sh">password SH</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>ipaddress
     <string name="ipaddress">IP address</string>

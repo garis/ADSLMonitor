@@ -113,6 +113,18 @@
                     android:layout_width="match_parent"
                     android:layout_height="200dp"/>
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:text="QLN"
+                android:id="@+id/textViewBIT" />
+
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/chartBIT"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"/>
+
 
             <Button
                     android:layout_width="wrap_content"

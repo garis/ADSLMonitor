@@ -13,15 +13,22 @@ import android.widget.EditText;
 
     abstract class CredentialDialog extends DialogFragment{
         String address;
-        String user;
-        String password;
+        String userSSH;
+        String passwordSSH;
+        String userSH;
+        String passwordSH;
 
         public abstract void setAddress(String str);
-        public abstract void setUser(String str);
-        public abstract void setPassword(String str);
+        public abstract void setUserSSH(String str);
+        public abstract void setPasswordSSH(String str);
+        public abstract void setUserSH(String str);
+        public abstract void setPasswordSH(String str);
+
         public abstract String getAddress();
-        public abstract String getUser();
-        public abstract String getPassword();
+        public abstract String getUserSSH();
+        public abstract String getPasswordSSH();
+        public abstract String getUserSH();
+        public abstract String getPasswordSH();
     }
 
     public class Credential extends CredentialDialog {
@@ -39,31 +46,42 @@ import android.widget.EditText;
                     .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int id) {
-                            final EditText etAddress = (EditText) getDialog().findViewById(R.id.address);
-                            final EditText etUser = (EditText) getDialog().findViewById(R.id.username);
-                            final EditText etPassword = (EditText) getDialog().findViewById(R.id.password);
-                            address = etAddress.getText().toString();
-                            user = etUser.getText().toString();
-                            password = etPassword.getText().toString();
+                            final EditText EdTxtAddress = (EditText) getDialog().findViewById(R.id.address);
+                            final EditText EdTxtUserSSH = (EditText) getDialog().findViewById(R.id.username_ssh);
+                            final EditText EdTxtPasswordSSH = (EditText) getDialog().findViewById(R.id.password_ssh);
+                            final EditText EdTxtUserSH = (EditText) getDialog().findViewById(R.id.username_sh);
+                            final EditText EdTxtPasswordSH = (EditText) getDialog().findViewById(R.id.password_sh);
+                            address = EdTxtAddress.getText().toString();
+                            userSSH = EdTxtUserSSH.getText().toString();
+                            passwordSSH = EdTxtPasswordSSH.getText().toString();
+                            userSH = EdTxtUserSH.getText().toString();
+                            passwordSH = EdTxtPasswordSH.getText().toString();
                         }
                     })
                     .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
                             address = "null";
-                            user = "null";
-                            password = "null";
+                            userSSH = "null";
+                            passwordSSH = "null";
+                            userSH = "null";
+                            passwordSH = "null";
                             dialog.dismiss();
                         }
                     });
 
             View content = inflater.inflate(R.layout.credential, null);
             builder.setView(content);
-            final EditText etAddress = (EditText) content.findViewById(R.id.address);
-            final EditText etUser = (EditText) content.findViewById(R.id.username);
-            final EditText etPassword = (EditText) content.findViewById(R.id.password);
-            etAddress.setText(address);
-            etUser.setText(user);
-            etPassword.setText(password);
+            final EditText EdTxtaddress = (EditText) content.findViewById(R.id.address);
+            final EditText EdTxtuserSSH = (EditText) content.findViewById(R.id.username_ssh);
+            final EditText EdTxtpasswordSSH = (EditText) content.findViewById(R.id.password_ssh);
+            final EditText EdTxtuserSH = (EditText) content.findViewById(R.id.username_sh);
+            final EditText EdTxtpasswordSH = (EditText) content.findViewById(R.id.password_ssh);
+
+            EdTxtaddress.setText(address);
+            EdTxtuserSSH.setText(userSSH);
+            EdTxtpasswordSSH.setText(passwordSSH);
+            EdTxtuserSSH.setText(userSH);
+            EdTxtpasswordSSH.setText(passwordSH);
 
             return builder.create();
         }
@@ -72,23 +90,39 @@ import android.widget.EditText;
             address=str;
         }
 
-        public void setUser(String str){
-            user=str;
+        public void setUserSSH(String str){
+            userSSH=str;
         }
 
-        public void setPassword(String str){
-            password=str;
+        public void setPasswordSSH(String str){
+            passwordSSH=str;
+        }
+
+        public void setUserSH(String str){
+            userSH=str;
+        }
+
+        public void setPasswordSH(String str){
+            passwordSH=str;
         }
 
         public String getAddress(){
             return address;
         }
 
-        public String getUser(){
-            return user;
+        public String getUserSSH(){
+            return userSSH;
         }
 
-        public String getPassword(){
-            return password;
+        public String getPasswordSSH(){
+            return passwordSSH;
+        }
+
+        public String getUserSH(){
+            return userSH;
+        }
+
+        public String getPasswordSH(){
+            return passwordSH;
         }
 }

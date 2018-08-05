@@ -18,20 +18,26 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.Session;
 
-import org.apache.commons.net.telnet.TelnetClient;
-
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Main extends AppCompatActivity {
 
@@ -52,29 +58,62 @@ public class Main extends AppCompatActivity {
     LineChart chartHLog;
     LineChart chartSNR;
     LineChart chartQLN;
+    LineChart chartBIT;
+
+    List<Entry> entriesSpeedDown = new ArrayList<Entry>();
+    List<Entry> entriesSpeedUp = new ArrayList<Entry>();
+    List<Entry> entriesHLog = new ArrayList<Entry>();
+    List<Entry> entriesSNR = new ArrayList<Entry>();
+    List<Entry> entriesQLN = new ArrayList<Entry>();
+    List<Entry> entriesBIT = new ArrayList<Entry>();
+
+    List<ILineDataSet> dataSetDown;
+    List<ILineDataSet> dataSetUp;
+    List<ILineDataSet> dataSetHlog;
+    List<ILineDataSet> dataSetSNR;
+    List<ILineDataSet> dataSetQLN;
+    List<ILineDataSet> dataSetBIT;
+
+    LineData dataDown;
+    LineData dataUp;
     LineData dataHlog;
     LineData dataSNR;
     LineData dataQLN;
+    LineData dataBIT;
+
+    LineDataSet setCompDown;
+    LineDataSet setCompUp;
+    LineDataSet setCompHlog;
+    LineDataSet setCompSNR;
+    LineDataSet setCompQLN;
+    LineDataSet setCompBIT;
 
     //workaround for "glitch on SNR QLN HLog graphs
-    int update=0;
+    int update = 0;
 
     float downValue = 0;
     float upValue = 0;
     int time = 0;
-    float interval=1000;
-    boolean drawHlogAndStuffs=false;
-    boolean HlogGraphUpdate=false;
-    boolean SNRGraphUpdate=false;
-    boolean QLNGraphUpdate=false;
+    float interval = 1000;
+    boolean drawHlogAndStuffs = false;
+    boolean HlogGraphUpdate = false;
+    boolean SNRGraphUpdate = false;
+    boolean QLNGraphUpdate = false;
+    boolean BITGraphUpdate = false;
     final int NOTIFICATION_ID = 1;
+    final int GRAPH_MAX_TIME = 60;
 
     //Credential stuffs
     private SharedPreferences mPrefs;
     Credential c = new Credential();
     private String address;
-    private String user;
-    private String password;
+    private String userSSH;
+    private String passwordSSH;
+    private String userSH;
+    private String passwordSH;
+
+    BufferedReader fromServer;
+    OutputStream toServer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,57 +123,87 @@ public class Main extends AppCompatActivity {
         //credential
         mPrefs = getSharedPreferences("userdetails", MODE_PRIVATE);
         address = mPrefs.getString("address", "null");
-        user = mPrefs.getString("user", "null");
-        password = mPrefs.getString("password", "null");
-
+        userSSH = mPrefs.getString("userSSH", "null");
+        passwordSSH = mPrefs.getString("passwordSSH", "null");
+        userSH = mPrefs.getString("userSH", "null");
+        passwordSH = mPrefs.getString("passwordSH", "null");
+        //######################################################################### DOWN
         chartDownSpeed = (LineChart) findViewById(R.id.chartDownSpeed);
-        LineData dataD = new LineData();
-        dataD.setValueTextColor(Color.WHITE);
-        chartDownSpeed.setData(dataD);
-        chartDownSpeed.setDrawBorders(false);
-        chartDownSpeed.setDescription("");
-        chartDownSpeed.setAutoScaleMinMaxEnabled(true);
-        chartDownSpeed.setTouchEnabled(false);
-        chartDownSpeed.getAxisLeft().setAxisMinValue(0.0f);
-        chartDownSpeed.getAxisRight().setAxisMinValue(0.0f);
+        entriesSpeedDown.add(new Entry(0, 0));
+        //entriesSpeedDown.add(new Entry(1,10));
+        //entriesSpeedDown.add(new Entry(2,30));
+        setCompDown = new LineDataSet(entriesSpeedDown, "Down speed");
+        setCompDown.setAxisDependency(YAxis.AxisDependency.LEFT);
+        dataSetDown = new ArrayList<ILineDataSet>();
+        dataSetDown.add(setCompDown);
+        dataDown = new LineData(dataSetDown);
+        chartDownSpeed.setData(dataDown);
+        chartDownSpeed.invalidate(); // refresh
 
+        //######################################################################### UP
         chartUpSpeed = (LineChart) findViewById(R.id.chartUpSpeed);
-        dataD = new LineData();
-        dataD.setValueTextColor(Color.WHITE);
-        chartUpSpeed.setData(dataD);
-        chartUpSpeed.setDrawBorders(false);
-        chartUpSpeed.setDescription("");
-        chartUpSpeed.setAutoScaleMinMaxEnabled(true);
-        chartUpSpeed.setTouchEnabled(false);
-        chartUpSpeed.getAxisLeft().setAxisMinValue(0.0f);
-        chartUpSpeed.getAxisRight().setAxisMinValue(0.0f);
+        entriesSpeedUp.add(new Entry(0, 0));
+        //entriesSpeedDown.add(new Entry(1,10));
+        //entriesSpeedDown.add(new Entry(2,30));
+        setCompUp = new LineDataSet(entriesSpeedUp, "Up speed");
+        setCompUp.setAxisDependency(YAxis.AxisDependency.LEFT);
+        dataSetUp = new ArrayList<ILineDataSet>();
+        dataSetUp.add(setCompUp);
+        dataUp = new LineData(dataSetUp);
+        chartUpSpeed.setData(dataUp);
+        chartUpSpeed.invalidate(); // refresh
 
+        //######################################################################### HLOG
         chartHLog = (LineChart) findViewById(R.id.chartHLog);
-        dataD = new LineData();
-        dataD.setValueTextColor(Color.WHITE);
-        chartHLog.setData(dataD);
-        chartHLog.setDrawBorders(false);
-        chartHLog.setDescription("");
-        chartHLog.setAutoScaleMinMaxEnabled(true);
-        chartHLog.setTouchEnabled(false);
+        entriesHLog.add(new Entry(0, 0));
+        //entriesSpeedDown.add(new Entry(1,10));
+        //entriesSpeedDown.add(new Entry(2,30));
+        setCompHlog = new LineDataSet(entriesHLog, "H log");
+        setCompHlog.setAxisDependency(YAxis.AxisDependency.LEFT);
+        dataSetHlog = new ArrayList<ILineDataSet>();
+        dataSetHlog.add(setCompHlog);
+        dataHlog = new LineData(dataSetHlog);
+        chartHLog.setData(dataHlog);
+        chartHLog.invalidate(); // refresh
 
+        //######################################################################### SNR
         chartSNR = (LineChart) findViewById(R.id.chartSNR);
-        dataD = new LineData();
-        dataD.setValueTextColor(Color.WHITE);
-        chartSNR.setData(dataD);
-        chartSNR.setDrawBorders(false);
-        chartSNR.setDescription("");
-        chartSNR.setAutoScaleMinMaxEnabled(true);
-        chartSNR.setTouchEnabled(false);
+        entriesSNR.add(new Entry(0, 0));
+        //entriesSpeedDown.add(new Entry(1,10));
+        //entriesSpeedDown.add(new Entry(2,30));
+        setCompSNR = new LineDataSet(entriesSNR, "SNR");
+        setCompSNR.setAxisDependency(YAxis.AxisDependency.LEFT);
+        dataSetSNR = new ArrayList<ILineDataSet>();
+        dataSetSNR.add(setCompSNR);
+        dataSNR = new LineData(dataSetSNR);
+        chartSNR.setData(dataSNR);
+        chartSNR.invalidate(); // refresh
 
+        //######################################################################### QLN
         chartQLN = (LineChart) findViewById(R.id.chartQLN);
-        dataD = new LineData();
-        dataD.setValueTextColor(Color.WHITE);
-        chartQLN.setData(dataD);
-        chartQLN.setDrawBorders(false);
-        chartQLN.setDescription("");
-        chartQLN.setAutoScaleMinMaxEnabled(true);
-        chartQLN.setTouchEnabled(false);
+        entriesQLN.add(new Entry(0, 0));
+        //entriesSpeedDown.add(new Entry(1,10));
+        //entriesSpeedDown.add(new Entry(2,30));
+        setCompQLN = new LineDataSet(entriesQLN, "QLN");
+        setCompQLN.setAxisDependency(YAxis.AxisDependency.LEFT);
+        dataSetQLN = new ArrayList<ILineDataSet>();
+        dataSetQLN.add(setCompQLN);
+        dataQLN = new LineData(dataSetQLN);
+        chartQLN.setData(dataQLN);
+        chartQLN.invalidate(); // refresh
+
+        //######################################################################### Bit alloc
+        chartBIT = (LineChart) findViewById(R.id.chartBIT);
+        entriesBIT.add(new Entry(0, 0));
+        //entriesSpeedDown.add(new Entry(1,10));
+        //entriesSpeedDown.add(new Entry(2,30));
+        setCompBIT = new LineDataSet(entriesBIT, "BIT");
+        setCompBIT.setAxisDependency(YAxis.AxisDependency.LEFT);
+        dataSetBIT = new ArrayList<ILineDataSet>();
+        dataSetBIT.add(setCompBIT);
+        dataBIT = new LineData(dataSetBIT);
+        chartBIT.setData(dataBIT);
+        chartBIT.invalidate(); // refresh
 
         notificationManager = (NotificationManager) getSystemService(
                 NOTIFICATION_SERVICE);
@@ -145,10 +214,12 @@ public class Main extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
-                if(c!=null) {
+                if (c != null) {
                     address = c.getAddress();
-                    user = c.getUser();
-                    password = c.getPassword();
+                    userSSH = c.getUserSSH();
+                    passwordSSH = c.getPasswordSSH();
+                    userSH = c.getUserSH();
+                    passwordSH = c.getPasswordSH();
                 }
 
                 if (!loop) {
@@ -205,8 +276,10 @@ public class Main extends AppCompatActivity {
                 FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                 c = new Credential();
                 c.setAddress(address);
-                c.setUser(user);
-                c.setPassword(password);
+                c.setUserSSH(userSSH);
+                c.setPasswordSSH(passwordSSH);
+                c.setUserSH(userSH);
+                c.setPasswordSH(passwordSH);
                 c.show(ft, "w");
             }
         });
@@ -215,32 +288,42 @@ public class Main extends AppCompatActivity {
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             c = new Credential();
             c.setAddress(address);
-            c.setUser(user);
-            c.setPassword(password);
+            c.setUserSSH(userSSH);
+            c.setPasswordSSH(passwordSSH);
+            c.setUserSH(userSH);
+            c.setPasswordSH(passwordSH);
             c.show(ft, "w");
+        } else {
+            c = null;
         }
-        else
-        {
-            c=null;
-        }
+    }
+
+    public void onResume(){
+        super.onResume();
+        readSpeed = new myAsyncTask();
+        loop = true;
+        readSpeed.execute();
+    }
+
+    public void onStop() {
+        super.onStop();
+        loop = false;
+        return;
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-
         SharedPreferences.Editor ed = mPrefs.edit();
-        ed.putString("address",address);
-        ed.putString("user",user);
-        ed.putString("password",password);
+        ed.putString("address", address);
+        ed.putString("userSSH", userSSH);
+        ed.putString("passwordSSH", passwordSSH);
+        ed.putString("userSH", userSH);
+        ed.putString("passwordSH", passwordSH);
         ed.apply();
     }
 
     private class myAsyncTask extends AsyncTask<Void, Void, Void> {
-
-        InputStream in;
-        PrintStream out;
-        String prompt = " >";
 
         float oldRXValue = -1, oldTXValue = -1;
 
@@ -248,43 +331,52 @@ public class Main extends AppCompatActivity {
         protected Void doInBackground(Void... params) {
             onProgressUpdate("L");
 
-            TelnetClient telnet = new TelnetClient();
             try {
-                telnet.connect(address, 23);
-                in = telnet.getInputStream();
-                out = new PrintStream(telnet.getOutputStream());
 
-                readUntil("Login:");
-                write(user);
-                readUntil("Password:");
-                write(password);
+                java.util.Properties config = new java.util.Properties();
+                config.put("StrictHostKeyChecking", "no");
+                JSch jsch = new JSch();
+                Session session = jsch.getSession(userSSH, address, 22);
+                session.setPassword(passwordSSH);
+                session.setConfig(config);
+                session.connect();
+                System.out.println("Connected");
 
-                //login success
+                Channel channel = session.openChannel("shell");
 
-                readUntil(prompt);
-                write("sh");
-                readUntil("#");
+                fromServer = new BufferedReader(new InputStreamReader(channel.getInputStream()));
+                toServer = channel.getOutputStream();
+                channel.connect();
+                String result = loginShell(fromServer, toServer, userSH, passwordSH);
 
                 float timeMillis;
                 long prevTime = 0;
 
                 //used for compensating time consuming operation in the while(true) loop.
                 long loopTimeStart;
-
+                String line;
+                float RXValue = 0, TXValue = 0;
                 //reading cumulative data
                 while (loop) {
                     loopTimeStart = System.currentTimeMillis();
 
-                    write("ifconfig pppoa0");
+                    //ip -s link show ptm0
+                    toServer.write(("ip -s link show ptm0" + "\r\n").getBytes());
+                    toServer.flush();
+
+                    line = fromServer.readLine();
+                    while (!line.contains("RX"))
+                        line = fromServer.readLine();
+                    line = fromServer.readLine();
+
 
                     timeMillis = (float) ((System.currentTimeMillis() - prevTime)) / 1000F;
                     prevTime = System.currentTimeMillis();
-                    readUntil("RX bytes:");
 
-                    float RXValue = Float.parseFloat(readUntil(" ")) / 1000000;
-                    readUntil(":");
-                    float TXValue = Float.parseFloat(readUntil(" ")) / 1000000;
-                    readUntil("#");
+                    RXValue = Float.parseFloat(line.split(" ")[4]) / 1000000;
+                    fromServer.readLine();
+                    line = fromServer.readLine();
+                    TXValue = Float.parseFloat(line.split(" ")[4]) / 1000000;
 
                     downValue = (RXValue - oldRXValue) / timeMillis;
                     upValue = (TXValue - oldTXValue) / timeMillis;
@@ -294,164 +386,246 @@ public class Main extends AppCompatActivity {
                                 + decimalFormat.format(upValue) + " MiB/s";
                         onProgressUpdate("P");
                     }
-
                     oldRXValue = RXValue;
                     oldTXValue = TXValue;
 
-                    if(drawHlogAndStuffs) {
-                        drawHlog();drawSNR();drawQLN();
-                        drawHlogAndStuffs=!drawHlogAndStuffs;
+                    if (drawHlogAndStuffs) {
+                        drawHlog(fromServer, toServer);
+                        drawSNR(fromServer, toServer);
+                        drawQLN(fromServer, toServer);
+                        drawBIT(fromServer, toServer);
+                        drawHlogAndStuffs = !drawHlogAndStuffs;
                     }
                     waitPeriod(System.currentTimeMillis() - loopTimeStart);
                 }
-                write("exit");
-                write("exit");
+                toServer.write(("exit" + "\r\n").getBytes());
+                toServer.flush();
+                fromServer.readLine();
+                toServer.write(("exit" + "\r\n").getBytes());
+                toServer.flush();
+                fromServer.readLine();
             } catch (Exception e) {
                 e.printStackTrace();
                 onProgressUpdate("E");
             }
             return null;
         }
-        private synchronized void drawHlog() {
-            write("adsl info --Hlog");
-            readUntil("Tone number      Hlog");
-            String[] strVect=readUntil("#").split("\\r?\\n");
 
-            ArrayList<Entry> values = new ArrayList<>();
-            ArrayList<String> xVals = new ArrayList<>();
-
-            for(int i=1;i<strVect.length-1;i++) {
-                String[] line=strVect[i].split("          ");
-                int tone=Integer.parseInt(line[0].replaceAll(" ",""));
-                float value=Float.parseFloat(line[1].replaceAll(" ",""));
-                Entry point = new Entry(value, tone); // 0 == quarter 1
-                values.add(point);
-                xVals.add(""+tone);
+        private synchronized void drawHlog(BufferedReader fromServer, OutputStream toServer) throws IOException {
+            toServer.write(("xdslctl info --Hlog" + "\r\n").getBytes());
+            toServer.flush();
+            String retLine = fromServer.readLine();
+            while (!retLine.contains("Tone"))
+                retLine = fromServer.readLine();
+            StringBuilder strb = new StringBuilder();
+            while (!retLine.contains("8191")) {
+                retLine = fromServer.readLine();
+                strb.append(retLine);
             }
-            LineDataSet setHLog = new LineDataSet(values, "HLog");
-            setHLog.setAxisDependency(YAxis.AxisDependency.LEFT);
-            ArrayList<ILineDataSet> dataSets = new ArrayList<>();
-            dataSets.add(setHLog);
-            setHLog.setColor(Color.BLUE);
-            setHLog.setCircleColor(Color.BLUE);
-            setHLog.setCircleRadius(0.2f);
-            setHLog.setLineWidth(2f);
-            setHLog.setCircleColor(Color.BLUE);
-            setHLog.setCircleColorHole(Color.BLUE);
-            setHLog.setFillAlpha(65);
-            setHLog.setFillColor(ColorTemplate.getHoloBlue());
-            setHLog.setDrawValues(false);
-            setHLog.setDrawFilled(false);
-            setHLog.setMode(LineDataSet.Mode.CUBIC_BEZIER);
 
-            dataHlog = new LineData(xVals, dataSets);
-            HlogGraphUpdate=false;
-        }
-        private synchronized void drawSNR() {
-            write("adsl info --SNR");
-            readUntil("Tone number      SNR");
-            String[] strVect=readUntil("#").split("\\r?\\n");
+            String[] strVect = strb.toString().split("  ");
 
-            ArrayList<Entry> values = new ArrayList<>();
-            ArrayList<String> xVals = new ArrayList<>();
+            LineData data = chartHLog.getData();
+            data.clearValues();
 
-            for(int i=1;i<strVect.length-1;i++) {
-                String[] line=strVect[i].split("          ");
-                int tone=Integer.parseInt(line[0].replaceAll(" ",""));
-                float value=Float.parseFloat(line[1].replaceAll(" ",""));
-                Entry point = new Entry(value, tone); // 0 == quarter 1
-                values.add(point);
-                xVals.add(""+tone);
+            List<Entry> valsComp1 = new ArrayList<Entry>();
+
+            for (int i = 1; i < strVect.length - 1; i++) {
+                String[] line = strVect[i].split("\t\t");
+                int tone = Integer.parseInt(line[0].replaceAll(" ", ""));
+                float value = Float.parseFloat(line[1].replaceAll(" ", ""));
+                valsComp1.add(new Entry(tone, value));
             }
-            LineDataSet setSNR = new LineDataSet(values, "SNR");
-            setSNR.setAxisDependency(YAxis.AxisDependency.LEFT);
-            ArrayList<ILineDataSet> dataSets = new ArrayList<>();
-            dataSets.add(setSNR);
-            setSNR.setColor(Color.BLUE);
-            setSNR.setCircleColor(Color.BLUE);
-            setSNR.setCircleRadius(0.2f);
-            setSNR.setLineWidth(2f);
-            setSNR.setCircleColor(Color.BLUE);
-            setSNR.setCircleColorHole(Color.BLUE);
-            setSNR.setFillAlpha(65);
-            setSNR.setFillColor(ColorTemplate.getHoloBlue());
-            setSNR.setDrawValues(false);
-            setSNR.setDrawFilled(false);
-            setSNR.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+            LineDataSet setComp1 = new LineDataSet(valsComp1, "Hlog");
+            theme(setComp1);
 
-            dataSNR = new LineData(xVals, dataSets);
-            SNRGraphUpdate=false;
+            List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+            dataSets.add(setComp1);
+            data = new LineData(dataSets);
+            chartHLog.setData(data);
+            chartHLog.invalidate(); // refresh
+            HlogGraphUpdate = false;
+
         }
-        private synchronized void drawQLN() {
-            write("adsl info --QLN");
-            readUntil("Tone number      QLN");
-            String[] strVect=readUntil("#").split("\\r?\\n");
 
-            ArrayList<Entry> values = new ArrayList<>();
-            ArrayList<String> xVals = new ArrayList<>();
-
-            for(int i=1;i<strVect.length-1;i++) {
-                String[] line=strVect[i].split("          ");
-                int tone=Integer.parseInt(line[0].replaceAll(" ",""));
-                float value=Float.parseFloat(line[1].replaceAll(" ",""));
-                Entry point = new Entry(value, tone); // 0 == quarter 1
-                values.add(point);
-                xVals.add(""+tone);
+        private synchronized void drawSNR(BufferedReader fromServer, OutputStream toServer) throws IOException {
+            toServer.write(("xdslctl info --SNR" + "\r\n").getBytes());
+            toServer.flush();
+            String retLine = fromServer.readLine();
+            while (!retLine.contains("Tone"))
+                retLine = fromServer.readLine();
+            StringBuilder strb = new StringBuilder();
+            while (!retLine.contains("8191")) {
+                retLine = fromServer.readLine();
+                strb.append(retLine);
             }
-            LineDataSet setQLN = new LineDataSet(values, "QLN");
-            setQLN.setAxisDependency(YAxis.AxisDependency.LEFT);
-            ArrayList<ILineDataSet> dataSets = new ArrayList<>();
-            dataSets.add(setQLN);
-            setQLN.setColor(Color.BLUE);
-            setQLN.setCircleColor(Color.BLUE);
-            setQLN.setCircleRadius(0.2f);
-            setQLN.setLineWidth(2f);
-            setQLN.setCircleColor(Color.BLUE);
-            setQLN.setCircleColorHole(Color.BLUE);
-            setQLN.setFillAlpha(65);
-            setQLN.setFillColor(ColorTemplate.getHoloBlue());
-            setQLN.setDrawValues(false);
-            setQLN.setDrawFilled(false);
-            setQLN.setMode(LineDataSet.Mode.CUBIC_BEZIER);
 
-            dataQLN = new LineData(xVals, dataSets);
-            QLNGraphUpdate=false;
+            String[] strVect = strb.toString().split("  ");
+
+            LineData data = chartSNR.getData();
+            data.clearValues();
+
+            List<Entry> valsComp1 = new ArrayList<Entry>();
+
+            for (int i = 1; i < strVect.length - 1; i++) {
+                String[] line = strVect[i].split("\t\t");
+                int tone = Integer.parseInt(line[0].replaceAll(" ", ""));
+                float value = Float.parseFloat(line[1].replaceAll(" ", ""));
+                valsComp1.add(new Entry(tone, value));
+            }
+            LineDataSet setComp1 = new LineDataSet(valsComp1, "SNR");
+            theme(setComp1);
+
+            List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+            dataSets.add(setComp1);
+            data = new LineData(dataSets);
+            chartSNR.setData(data);
+            chartSNR.invalidate(); // refresh
+            SNRGraphUpdate = false;
         }
-        private synchronized void waitPeriod(long correction) {
+
+        private synchronized void drawQLN(BufferedReader fromServer, OutputStream toServer) throws IOException {
+            toServer.write(("xdslctl info --QLN" + "\r\n").getBytes());
+            toServer.flush();
+            String retLine = fromServer.readLine();
+            while (!retLine.contains("Tone"))
+                retLine = fromServer.readLine();
+            StringBuilder strb = new StringBuilder();
+            while (!retLine.contains("8191")) {
+                retLine = fromServer.readLine();
+                strb.append(retLine);
+            }
+
+            String[] strVect = strb.toString().split("  ");
+
+            LineData data = chartQLN.getData();
+            data.clearValues();
+
+            List<Entry> valsComp1 = new ArrayList<Entry>();
+
+            for (int i = 1; i < strVect.length - 1; i++) {
+                String[] line = strVect[i].split("\t\t");
+                int tone = Integer.parseInt(line[0].replaceAll(" ", ""));
+                float value = Float.parseFloat(line[1].replaceAll(" ", ""));
+                valsComp1.add(new Entry(tone, value));
+            }
+            LineDataSet setComp1 = new LineDataSet(valsComp1, "QLN");
+
+            theme(setComp1);
+
+            List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+            dataSets.add(setComp1);
+            data = new LineData(dataSets);
+            chartQLN.setData(data);
+            chartQLN.invalidate(); // refresh
+            QLNGraphUpdate = false;
+        }
+
+        private synchronized void drawBIT(BufferedReader fromServer, OutputStream toServer) throws IOException {
+            toServer.write(("xdslctl info --Bits" + "\r\n").getBytes());
+            toServer.flush();
+            String retLine = fromServer.readLine();
+            while (!retLine.contains("Tone"))
+                retLine = fromServer.readLine();
+            StringBuilder strb = new StringBuilder();
+            while (!retLine.contains("8191")) {
+                retLine = fromServer.readLine();
+                strb.append(retLine);
+            }
+
+            String[] strVect = strb.toString().split("  ");
+
+            LineData data = chartBIT.getData();
+            data.clearValues();
+
+            List<Entry> valsComp1 = new ArrayList<Entry>();
+
+            for (int i = 1; i < strVect.length - 1; i++) {
+                String[] line = strVect[i].split("\t\t");
+                int tone = Integer.parseInt(line[0].replaceAll(" ", ""));
+                float value = Float.parseFloat(line[1].replaceAll(" ", ""));
+                valsComp1.add(new Entry(tone, value));
+            }
+            LineDataSet setComp1 = new LineDataSet(valsComp1, "BIT");
+
+            theme(setComp1);
+
+            List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+            dataSets.add(setComp1);
+            data = new LineData(dataSets);
+            chartBIT.setData(data);
+            chartBIT.invalidate(); // refresh
+            BITGraphUpdate = false;
+        }
+
+        private void theme(LineDataSet setComp1) {
+            setComp1.setAxisDependency(YAxis.AxisDependency.LEFT);
+            setComp1.setColor(Color.BLUE);
+            setComp1.setCircleColor(Color.WHITE);
+            setComp1.setLineWidth(1f);
+            setComp1.setCircleRadius(0);
+            setComp1.setCircleColor(Color.BLUE);
+            setComp1.setCircleColorHole(Color.BLUE);
+            setComp1.setDrawCircles(false);
+            setComp1.setDrawCircleHole(false);
+            setComp1.setHighlightEnabled(false);
+            setComp1.setFillColor(ColorTemplate.getHoloBlue());
+            setComp1.setDrawValues(false);
+            setComp1.setDrawFilled(false);
+            setComp1.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+            setComp1.setCubicIntensity(0.2f);
+        }
+
+        public String loginShell(BufferedReader fromServer, OutputStream toServer, String user, String pass) {
+
             try {
-                if (correction < interval)
-                    this.wait((long)(interval) - correction);
+                toServer.write(("sh" + "\r\n").getBytes());
+                toServer.flush();
+                fromServer.readLine();
+
+                Thread.sleep(40);
+
+                toServer.write((user + "\n").getBytes());
+                toServer.flush();
+                fromServer.readLine();
+
+                Thread.sleep(40);
+
+                toServer.write((pass + "\n").getBytes());
+                toServer.flush();
+                fromServer.readLine();
+
+                Thread.sleep(40);
+
+                toServer.write(("date" + "\n").getBytes());
+                toServer.flush();
+                fromServer.readLine();
+
+                Thread.sleep(40);
+
+                String line;
+                StringBuilder builder = new StringBuilder();
+
+                while (true) {
+                    line = fromServer.readLine();
+                    builder.append(line);
+                    if (line.contains("#"))
+                        break;
+                }
+                return builder.toString();
+            } catch (IOException e) {
+                e.printStackTrace();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            return "Error";
         }
 
-        public String readUntil(String pattern) {
-
-            StringBuilder sb = new StringBuilder();
+        private synchronized void waitPeriod(long correction) {
             try {
-                char lastChar = pattern.charAt(pattern.length() - 1);
-                char ch = (char) in.read();
-                while (true) {
-                    sb.append(ch);
-                    if (ch == lastChar) {
-                        if (sb.toString().endsWith(pattern)) {
-                            return sb.toString();
-                        }
-                    }
-                    ch = (char) in.read();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return sb.toString();
-        }
-
-        public void write(String value) {
-            try {
-                out.println(value);
-                out.flush();
-            } catch (Exception e) {
+                if (correction < interval)
+                    this.wait((long) (interval) - correction);
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
@@ -474,124 +648,53 @@ public class Main extends AppCompatActivity {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    // This gets executed on the UI thread so it can safely modify Views
-                    final TextView statusText = (TextView) findViewById(R.id.textView);
-                    statusText.setText(result);
 
-                    LineData dataD = chartDownSpeed.getData();
-                    LineData dataU = chartUpSpeed.getData();
-                    if (dataD != null) {
-                        ILineDataSet set = dataD.getDataSetByIndex(0);
-                        if (set == null) {
-                            set = createSetDown();
-                            dataD.addDataSet(set);
-                        }
-                        dataD.addXValue("" + time);
-                        dataD.addEntry(new Entry(downValue * 1000f, set.getEntryCount()), 0);
-
-                        chartDownSpeed.setVisibleXRangeMaximum(60);
-                        chartDownSpeed.moveViewToX(dataD.getXValCount() - 61);
+                    LineData data = chartDownSpeed.getData();
+                    if (data != null) {
+                        ILineDataSet set = data.getDataSetByIndex(0);
+                        data.addEntry(new Entry(time, downValue), 0);
+                        //if (time > GRAPH_MAX_TIME)
+                        //    data.removeEntry(0, 0);
+                        data.notifyDataChanged();
                         chartDownSpeed.notifyDataSetChanged();
+                        chartDownSpeed.moveViewToX(data.getEntryCount());
                     }
-                    if (dataU != null) {
-                        ILineDataSet set = dataU.getDataSetByIndex(0);
 
-                        if (set == null) {
-                            set = createSetUp();
-                            dataU.addDataSet(set);
-                        }
-                        dataU.addXValue("" + time);
-                        dataU.addEntry(new Entry(upValue * 1000f, set.getEntryCount()), 0);
-
+                    data = chartUpSpeed.getData();
+                    if (data != null) {
+                        ILineDataSet set = data.getDataSetByIndex(0);
+                        data.addEntry(new Entry(time, upValue), 0);
+                        //if (time > GRAPH_MAX_TIME)
+                        //    data.removeEntry(0, 0);
+                        data.notifyDataChanged();
                         chartUpSpeed.notifyDataSetChanged();
-                        chartUpSpeed.setVisibleXRangeMaximum(60);
-                        chartUpSpeed.moveViewToX(dataU.getXValCount() - 61);
+                        chartUpSpeed.moveViewToX(data.getEntryCount());
                     }
-                    time++;
-                    if (time > 60) {
-                        time = 0;
+
+                    if (dataHlog != null && !HlogGraphUpdate) {
+                        HlogGraphUpdate = true;
                     }
-                    if(dataHlog!=null && !HlogGraphUpdate){
-                        chartHLog.setData(dataHlog);
-                        HlogGraphUpdate=true;
+                    if (dataSNR != null && !SNRGraphUpdate) {
+                        SNRGraphUpdate = true;
                     }
-                    if(dataSNR!=null && !SNRGraphUpdate){
-                        chartSNR.setData(dataSNR);
-                        SNRGraphUpdate=true;
+                    if (dataQLN != null && !QLNGraphUpdate) {
+                        QLNGraphUpdate = true;
                     }
-                    if(dataQLN!=null && !QLNGraphUpdate){
-                        chartQLN.setData(dataQLN);
-                        QLNGraphUpdate=true;
-                    }
-                    if(update>0)
-                    {
-                        chartHLog.invalidate();
-                        chartSNR.invalidate();
-                        chartQLN.invalidate();
+                    if (update > 0)
                         update--;
-                    }
                 }
             });
         }
     }
 
-    private LineDataSet createSetDown() {
-
-        LineDataSet set = new LineDataSet(null, "Download Speed (KiB/s)");
-        set.setAxisDependency(YAxis.AxisDependency.LEFT);
-        set.setColor(Color.GREEN);
-        set.setCircleColor(Color.WHITE);
-        set.setLineWidth(2f);
-        set.setCircleRadius(0);
-        set.setCircleColor(Color.GREEN);
-        set.setCircleColorHole(Color.GREEN);
-        set.setFillAlpha(65);
-        set.setFillColor(ColorTemplate.getHoloBlue());
-        set.setDrawValues(false);
-        set.setDrawFilled(true);
-        set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-        set.setCubicIntensity(0.2f);
-        return set;
-    }
-
-    private LineDataSet createSetUp() {
-
-        LineDataSet set = new LineDataSet(null, "Upload Speed (KiB/s)");
-        set.setAxisDependency(YAxis.AxisDependency.LEFT);
-        set.setColor(Color.RED);
-        set.setCircleColor(Color.WHITE);
-        set.setLineWidth(2f);
-        set.setCircleRadius(0);
-        set.setCircleColor(Color.RED);
-        set.setCircleColorHole(Color.RED);
-        set.setFillAlpha(65);
-        set.setFillColor(ColorTemplate.getHoloBlue());
-        set.setDrawValues(false);
-        set.setDrawFilled(true);
-        set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-        set.setCubicIntensity(0.2f);
-        return set;
-    }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        //getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        //if (id == R.id.action_settings) {
-        //    return true;
-        //}
-
         return super.onOptionsItemSelected(item);
     }
 
