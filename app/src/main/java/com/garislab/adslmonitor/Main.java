@@ -170,7 +170,7 @@ public class Main extends AppCompatActivity {
         //entriesSpeedDown.add(new Entry(2,30));
         setCompHlog = new LineDataSet(entriesHLog, "H log");
         setCompHlog.setAxisDependency(YAxis.AxisDependency.LEFT);
-        dataSetHlog = new ArrayList<ILineDataSet>();
+        dataSetHlog = new ArrayList<>();
         dataSetHlog.add(setCompHlog);
         dataHlog = new LineData(dataSetHlog);
         chartHLog.setData(dataHlog);
