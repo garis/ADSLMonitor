@@ -136,7 +136,7 @@ public class Main extends AppCompatActivity {
         //entriesSpeedDown.add(new Entry(2,30));
         setCompDown = new LineDataSet(entriesSpeedDown, "Down speed");
         setCompDown.setAxisDependency(YAxis.AxisDependency.LEFT);
-        dataSetDown = new ArrayList<ILineDataSet>();
+        dataSetDown = new ArrayList<>();
         dataSetDown.add(setCompDown);
         dataDown = new LineData(dataSetDown);
         chartDownSpeed.setData(dataDown);
