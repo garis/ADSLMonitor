@@ -1,12 +1,11 @@
-package com.example.riccardo.adslmonitor;
+package com.garislab.adslmonitor;
 
-import android.app.NotificationManager;
+import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -17,7 +16,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.YAxis;
@@ -41,16 +39,14 @@ import java.util.List;
 
 public class Main extends AppCompatActivity {
 
+
     DecimalFormat decimalFormat = new DecimalFormat("#0.00#");
 
     private Handler mHandler = new Handler();
-    TextView statusText;
 
     private boolean loop = false;
     String result = "";
     myAsyncTask readSpeed;
-    NotificationCompat.Builder builder;
-    NotificationManager notificationManager;
 
     //chart stuffs
     LineChart chartDownSpeed;
@@ -60,12 +56,12 @@ public class Main extends AppCompatActivity {
     LineChart chartQLN;
     LineChart chartBIT;
 
-    List<Entry> entriesSpeedDown = new ArrayList<Entry>();
-    List<Entry> entriesSpeedUp = new ArrayList<Entry>();
-    List<Entry> entriesHLog = new ArrayList<Entry>();
-    List<Entry> entriesSNR = new ArrayList<Entry>();
-    List<Entry> entriesQLN = new ArrayList<Entry>();
-    List<Entry> entriesBIT = new ArrayList<Entry>();
+    List<Entry> entriesSpeedDown = new ArrayList<>();
+    List<Entry> entriesSpeedUp = new ArrayList<>();
+    List<Entry> entriesHLog = new ArrayList<>();
+    List<Entry> entriesSNR = new ArrayList<>();
+    List<Entry> entriesQLN = new ArrayList<>();
+    List<Entry> entriesBIT = new ArrayList<>();
 
     List<ILineDataSet> dataSetDown;
     List<ILineDataSet> dataSetUp;
@@ -101,7 +97,6 @@ public class Main extends AppCompatActivity {
     boolean QLNGraphUpdate = false;
     boolean BITGraphUpdate = false;
 
-    final int NOTIFICATION_ID = 1;
 
     final int GRAPH_MAX_TIME = 60;
 
@@ -122,6 +117,8 @@ public class Main extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        fullscreen();
+
         //credential
         mPrefs = getSharedPreferences("userdetails", MODE_PRIVATE);
         address = mPrefs.getString("address", "null");
@@ -129,14 +126,13 @@ public class Main extends AppCompatActivity {
         passwordSSH = mPrefs.getString("passwordSSH", "null");
         userSH = mPrefs.getString("userSH", "null");
         passwordSH = mPrefs.getString("passwordSH", "null");
+
         //######################################################################### DOWN
-        chartDownSpeed = (LineChart) findViewById(R.id.chartDownSpeed);
+        chartDownSpeed = findViewById(R.id.chartDownSpeed);
         entriesSpeedDown.add(new Entry(0, 0));
-        //entriesSpeedDown.add(new Entry(1,10));
-        //entriesSpeedDown.add(new Entry(2,30));
         setCompDown = new LineDataSet(entriesSpeedDown, "Down speed");
         setCompDown.setAxisDependency(YAxis.AxisDependency.LEFT);
-        dataSetDown = new ArrayList<ILineDataSet>();
+        dataSetDown = new ArrayList<>();
         dataSetDown.add(setCompDown);
         dataDown = new LineData(dataSetDown);
         chartDownSpeed.setData(dataDown);
@@ -144,13 +140,11 @@ public class Main extends AppCompatActivity {
         chartDownSpeed.invalidate(); // refresh
 
         //######################################################################### UP
-        chartUpSpeed = (LineChart) findViewById(R.id.chartUpSpeed);
+        chartUpSpeed = findViewById(R.id.chartUpSpeed);
         entriesSpeedUp.add(new Entry(0, 0));
-        //entriesSpeedDown.add(new Entry(1,10));
-        //entriesSpeedDown.add(new Entry(2,30));
         setCompUp = new LineDataSet(entriesSpeedUp, "Up speed");
         setCompUp.setAxisDependency(YAxis.AxisDependency.LEFT);
-        dataSetUp = new ArrayList<ILineDataSet>();
+        dataSetUp = new ArrayList<>();
         dataSetUp.add(setCompUp);
         dataUp = new LineData(dataSetUp);
         chartUpSpeed.setData(dataUp);
@@ -158,63 +152,50 @@ public class Main extends AppCompatActivity {
         chartUpSpeed.invalidate(); // refresh
 
         //######################################################################### HLOG
-        chartHLog = (LineChart) findViewById(R.id.chartHLog);
+        chartHLog = findViewById(R.id.chartHLog);
         entriesHLog.add(new Entry(0, 0));
-        //entriesSpeedDown.add(new Entry(1,10));
-        //entriesSpeedDown.add(new Entry(2,30));
         setCompHlog = new LineDataSet(entriesHLog, "H log");
         setCompHlog.setAxisDependency(YAxis.AxisDependency.LEFT);
-        dataSetHlog = new ArrayList<ILineDataSet>();
+        dataSetHlog = new ArrayList<>();
         dataSetHlog.add(setCompHlog);
         dataHlog = new LineData(dataSetHlog);
         chartHLog.setData(dataHlog);
         chartHLog.invalidate(); // refresh
 
         //######################################################################### SNR
-        chartSNR = (LineChart) findViewById(R.id.chartSNR);
+        chartSNR = findViewById(R.id.chartSNR);
         entriesSNR.add(new Entry(0, 0));
-        //entriesSpeedDown.add(new Entry(1,10));
-        //entriesSpeedDown.add(new Entry(2,30));
         setCompSNR = new LineDataSet(entriesSNR, "SNR");
         setCompSNR.setAxisDependency(YAxis.AxisDependency.LEFT);
-        dataSetSNR = new ArrayList<ILineDataSet>();
+        dataSetSNR = new ArrayList<>();
         dataSetSNR.add(setCompSNR);
         dataSNR = new LineData(dataSetSNR);
         chartSNR.setData(dataSNR);
         chartSNR.invalidate(); // refresh
 
         //######################################################################### QLN
-        chartQLN = (LineChart) findViewById(R.id.chartQLN);
+        chartQLN = findViewById(R.id.chartQLN);
         entriesQLN.add(new Entry(0, 0));
-        //entriesSpeedDown.add(new Entry(1,10));
-        //entriesSpeedDown.add(new Entry(2,30));
         setCompQLN = new LineDataSet(entriesQLN, "QLN");
         setCompQLN.setAxisDependency(YAxis.AxisDependency.LEFT);
-        dataSetQLN = new ArrayList<ILineDataSet>();
+        dataSetQLN = new ArrayList<>();
         dataSetQLN.add(setCompQLN);
         dataQLN = new LineData(dataSetQLN);
         chartQLN.setData(dataQLN);
         chartQLN.invalidate(); // refresh
 
         //######################################################################### Bit alloc
-        chartBIT = (LineChart) findViewById(R.id.chartBIT);
+        chartBIT = findViewById(R.id.chartBIT);
         entriesBIT.add(new Entry(0, 0));
-        //entriesSpeedDown.add(new Entry(1,10));
-        //entriesSpeedDown.add(new Entry(2,30));
         setCompBIT = new LineDataSet(entriesBIT, "BIT");
         setCompBIT.setAxisDependency(YAxis.AxisDependency.LEFT);
-        dataSetBIT = new ArrayList<ILineDataSet>();
+        dataSetBIT = new ArrayList<>();
         dataSetBIT.add(setCompBIT);
         dataBIT = new LineData(dataSetBIT);
         chartBIT.setData(dataBIT);
         chartBIT.invalidate(); // refresh
 
-        notificationManager = (NotificationManager) getSystemService(
-                NOTIFICATION_SERVICE);
-
-        statusText = (TextView) findViewById(R.id.textView);
-
-        final Button button = (Button) findViewById(R.id.confirm);
+        final Button button = findViewById(R.id.confirm);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
@@ -228,13 +209,9 @@ public class Main extends AppCompatActivity {
 
                 if (!loop) {
                     button.setText(R.string.buttontext);
-                    builder = new NotificationCompat.Builder(v.getContext())
-                            .setAutoCancel(true);
-                    builder.setSmallIcon(R.drawable.ic_launcher);
-                    builder.setContentTitle("ADSL speed");
-                    builder.setContentText("");
 
-                    notificationManager.notify(NOTIFICATION_ID, builder.build());
+                    //NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getBaseContext());
+                    //notificationManager.notify(NOTIFICATION_ID, mBuilder.build());
 
                     readSpeed = new myAsyncTask();
                     loop = true;
@@ -247,7 +224,7 @@ public class Main extends AppCompatActivity {
             }
         });
 
-        final Button buttonUpdate = (Button) findViewById(R.id.buttonUpdateGraph);
+        final Button buttonUpdate = findViewById(R.id.buttonUpdateGraph);
         buttonUpdate.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 //on the update speed loop this will draw the graph on time
@@ -255,7 +232,7 @@ public class Main extends AppCompatActivity {
                 update = 2;
             }
         });
-        final EditText et1 = (EditText) findViewById(R.id.editTextUpdateInterval);
+        final EditText et1 = findViewById(R.id.editTextUpdateInterval);
         et1.addTextChangedListener(new TextWatcher() {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
             }
@@ -274,7 +251,7 @@ public class Main extends AppCompatActivity {
             }
         });
 
-        final Button credential = (Button) findViewById(R.id.credential);
+        final Button credential = findViewById(R.id.credential);
         credential.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
@@ -312,7 +289,6 @@ public class Main extends AppCompatActivity {
     public void onStop() {
         super.onStop();
         loop = false;
-        return;
     }
 
     @Override
@@ -327,7 +303,8 @@ public class Main extends AppCompatActivity {
         ed.apply();
     }
 
-    private class myAsyncTask extends AsyncTask<Void, Void, Void> {
+    @SuppressLint("StaticFieldLeak")
+    protected class myAsyncTask extends AsyncTask<Void, Void, Void> {
 
         float oldRXValue = -1, oldTXValue = -1;
 
@@ -351,7 +328,7 @@ public class Main extends AppCompatActivity {
                 fromServer = new BufferedReader(new InputStreamReader(channel.getInputStream()));
                 toServer = channel.getOutputStream();
                 channel.connect();
-                String result = loginShell(fromServer, toServer, userSH, passwordSH);
+                loginShell(fromServer, toServer, userSH, passwordSH);
 
                 float timeMillis;
                 long prevTime = 0;
@@ -359,7 +336,7 @@ public class Main extends AppCompatActivity {
                 //used for compensating time consuming operation in the while(true) loop.
                 long loopTimeStart;
                 String line;
-                float RXValue = 0, TXValue = 0;
+                float RXValue, TXValue;
                 //reading cumulative data
                 while (loop) {
                     loopTimeStart = System.currentTimeMillis();
@@ -402,6 +379,7 @@ public class Main extends AppCompatActivity {
                     }
                     waitPeriod(System.currentTimeMillis() - loopTimeStart);
                 }
+                onProgressUpdate("S");
                 toServer.write(("exit" + "\r\n").getBytes());
                 toServer.flush();
                 fromServer.readLine();
@@ -427,12 +405,12 @@ public class Main extends AppCompatActivity {
                 strb.append(retLine);
             }
 
-            String[] strVect = strb.toString().split("  ");
+            String[] strVect = strb.toString().split(getString(R.string.separator));
 
             LineData data = chartHLog.getData();
             data.clearValues();
 
-            List<Entry> valsComp1 = new ArrayList<Entry>();
+            List<Entry> valsComp1 = new ArrayList<>();
 
             for (int i = 1; i < strVect.length - 1; i++) {
                 String[] line = strVect[i].split("\t\t");
@@ -443,7 +421,7 @@ public class Main extends AppCompatActivity {
             LineDataSet setComp1 = new LineDataSet(valsComp1, "Hlog");
             themeLineaParams(setComp1);
 
-            List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+            List<ILineDataSet> dataSets = new ArrayList<>();
             dataSets.add(setComp1);
             data = new LineData(dataSets);
             chartHLog.setData(data);
@@ -464,12 +442,12 @@ public class Main extends AppCompatActivity {
                 strb.append(retLine);
             }
 
-            String[] strVect = strb.toString().split("  ");
+            String[] strVect = strb.toString().split(getString(R.string.separator));
 
             LineData data = chartSNR.getData();
             data.clearValues();
 
-            List<Entry> valsComp1 = new ArrayList<Entry>();
+            List<Entry> valsComp1 = new ArrayList<>();
 
             for (int i = 1; i < strVect.length - 1; i++) {
                 String[] line = strVect[i].split("\t\t");
@@ -480,7 +458,7 @@ public class Main extends AppCompatActivity {
             LineDataSet setComp1 = new LineDataSet(valsComp1, "SNR");
             themeLineaParams(setComp1);
 
-            List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+            List<ILineDataSet> dataSets = new ArrayList<>();
             dataSets.add(setComp1);
             data = new LineData(dataSets);
             chartSNR.setData(data);
@@ -500,12 +478,12 @@ public class Main extends AppCompatActivity {
                 strb.append(retLine);
             }
 
-            String[] strVect = strb.toString().split("  ");
+            String[] strVect = strb.toString().split(getString(R.string.separator));
 
             LineData data = chartQLN.getData();
             data.clearValues();
 
-            List<Entry> valsComp1 = new ArrayList<Entry>();
+            List<Entry> valsComp1 = new ArrayList<>();
 
             for (int i = 1; i < strVect.length - 1; i++) {
                 String[] line = strVect[i].split("\t\t");
@@ -517,7 +495,7 @@ public class Main extends AppCompatActivity {
 
             themeLineaParams(setComp1);
 
-            List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+            List<ILineDataSet> dataSets = new ArrayList<>();
             dataSets.add(setComp1);
             data = new LineData(dataSets);
             chartQLN.setData(data);
@@ -537,12 +515,12 @@ public class Main extends AppCompatActivity {
                 strb.append(retLine);
             }
 
-            String[] strVect = strb.toString().split("  ");
+            String[] strVect = strb.toString().split(getString(R.string.separator));
 
             LineData data = chartBIT.getData();
             data.clearValues();
 
-            List<Entry> valsComp1 = new ArrayList<Entry>();
+            List<Entry> valsComp1 = new ArrayList<>();
 
             for (int i = 1; i < strVect.length - 1; i++) {
                 String[] line = strVect[i].split("\t\t");
@@ -554,7 +532,7 @@ public class Main extends AppCompatActivity {
 
             themeLineaParams(setComp1);
 
-            List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+            List<ILineDataSet> dataSets = new ArrayList<>();
             dataSets.add(setComp1);
             data = new LineData(dataSets);
             chartBIT.setData(data);
@@ -579,7 +557,7 @@ public class Main extends AppCompatActivity {
         }
 
 
-        public String loginShell(BufferedReader fromServer, OutputStream toServer, String user, String pass) {
+        String loginShell(BufferedReader fromServer, OutputStream toServer, String user, String pass) {
 
             try {
                 toServer.write(("sh" + "\r\n").getBytes());
@@ -616,9 +594,7 @@ public class Main extends AppCompatActivity {
                         break;
                 }
                 return builder.toString();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
             return "Error";
@@ -633,17 +609,15 @@ public class Main extends AppCompatActivity {
             }
         }
 
-        protected void onProgressUpdate(String... params) {
+        private void onProgressUpdate(String... params) {
             char c = params[0].charAt(0);
             switch (c) {
                 case 'L':
                     break;
-                case 'P':
-                    builder.setContentText(result);
-                    notificationManager.notify(
-                            NOTIFICATION_ID,
-                            builder.build());
+                case 'P'://update
 
+                    break;
+                case 'S'://stop
                     break;
                 default:
                     result = "what!?";
@@ -651,6 +625,7 @@ public class Main extends AppCompatActivity {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
+                    ((EditText) findViewById(R.id.textViewSpeed)).setText(result);
 
                     LineData data = chartDownSpeed.getData();
                     if (data != null) {
@@ -698,7 +673,6 @@ public class Main extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
         return super.onOptionsItemSelected(item);
     }
 
@@ -737,5 +711,22 @@ public class Main extends AppCompatActivity {
         setComp1.setDrawFilled(false);
         setComp1.setMode(LineDataSet.Mode.CUBIC_BEZIER);
         setComp1.setCubicIntensity(0.2f);
+    }
+
+    private void fullscreen() {
+        // Enables regular immersive mode.
+        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
+        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        View decorView = getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        // Set the content to appear under the system bars so that the
+                        // content doesn't resize when the system bars hide and show.
+                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        // Hide the nav bar and status bar
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
     }
 }
