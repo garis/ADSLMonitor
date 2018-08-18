@@ -1,4 +1,4 @@
-package com.example.riccardo.adslmonitor;
+package com.garislab.adslmonitor;
 
 import android.app.NotificationManager;
 import android.content.SharedPreferences;
@@ -141,6 +141,9 @@ public class Main extends AppCompatActivity {
         dataDown = new LineData(dataSetDown);
         chartDownSpeed.setData(dataDown);
         themeLineSpeedDown(setCompDown);
+        chartDownSpeed.getAxisLeft().setAxisMinimum(0);
+        chartDownSpeed.getAxisRight().setAxisMinimum(0);
+        chartDownSpeed.getDescription().setEnabled(false);
         chartDownSpeed.invalidate(); // refresh
 
         //######################################################################### UP
@@ -155,6 +158,9 @@ public class Main extends AppCompatActivity {
         dataUp = new LineData(dataSetUp);
         chartUpSpeed.setData(dataUp);
         themeLineSpeedUp(setCompUp);
+        chartUpSpeed.getAxisLeft().setAxisMinimum(0);
+        chartUpSpeed.getAxisRight().setAxisMinimum(0);
+        chartUpSpeed.getDescription().setEnabled(false);
         chartUpSpeed.invalidate(); // refresh
 
         //######################################################################### HLOG
@@ -168,6 +174,7 @@ public class Main extends AppCompatActivity {
         dataSetHlog.add(setCompHlog);
         dataHlog = new LineData(dataSetHlog);
         chartHLog.setData(dataHlog);
+        chartHLog.getDescription().setEnabled(false);
         chartHLog.invalidate(); // refresh
 
         //######################################################################### SNR
@@ -181,6 +188,7 @@ public class Main extends AppCompatActivity {
         dataSetSNR.add(setCompSNR);
         dataSNR = new LineData(dataSetSNR);
         chartSNR.setData(dataSNR);
+        chartSNR.getDescription().setEnabled(false);
         chartSNR.invalidate(); // refresh
 
         //######################################################################### QLN
@@ -194,6 +202,7 @@ public class Main extends AppCompatActivity {
         dataSetQLN.add(setCompQLN);
         dataQLN = new LineData(dataSetQLN);
         chartQLN.setData(dataQLN);
+        chartQLN.getDescription().setEnabled(false);
         chartQLN.invalidate(); // refresh
 
         //######################################################################### Bit alloc
@@ -207,12 +216,11 @@ public class Main extends AppCompatActivity {
         dataSetBIT.add(setCompBIT);
         dataBIT = new LineData(dataSetBIT);
         chartBIT.setData(dataBIT);
+        chartBIT.getDescription().setEnabled(false);
         chartBIT.invalidate(); // refresh
 
         notificationManager = (NotificationManager) getSystemService(
                 NOTIFICATION_SERVICE);
-
-        statusText = (TextView) findViewById(R.id.textView);
 
         final Button button = (Button) findViewById(R.id.confirm);
         button.setOnClickListener(new View.OnClickListener() {
@@ -351,7 +359,7 @@ public class Main extends AppCompatActivity {
                 fromServer = new BufferedReader(new InputStreamReader(channel.getInputStream()));
                 toServer = channel.getOutputStream();
                 channel.connect();
-                String result = loginShell(fromServer, toServer, userSH, passwordSH);
+                loginShell(fromServer, toServer, userSH, passwordSH);
 
                 float timeMillis;
                 long prevTime = 0;
@@ -639,10 +647,6 @@ public class Main extends AppCompatActivity {
                 case 'L':
                     break;
                 case 'P':
-                    builder.setContentText(result);
-                    notificationManager.notify(
-                            NOTIFICATION_ID,
-                            builder.build());
 
                     break;
                 default:
@@ -651,6 +655,8 @@ public class Main extends AppCompatActivity {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
+
+                    ((TextView)(findViewById(R.id.textViewSpeed))).setText(result);
 
                     LineData data = chartDownSpeed.getData();
                     if (data != null) {
