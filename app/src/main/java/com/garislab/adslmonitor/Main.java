@@ -330,8 +330,8 @@ public class Main extends AppCompatActivity {
         ed.putString("address", address);
         ed.putString("userSSH", userSSH);
         ed.putString("passwordSSH", passwordSSH);
-        ed.putString("userSH", userSH);
-        ed.putString("passwordSH", passwordSH);
+        //ed.putString("userSH", userSH);
+        //ed.putString("passwordSH", passwordSH);
         ed.apply();
     }
 
@@ -359,7 +359,8 @@ public class Main extends AppCompatActivity {
                 fromServer = new BufferedReader(new InputStreamReader(channel.getInputStream()));
                 toServer = channel.getOutputStream();
                 channel.connect();
-                loginShell(fromServer, toServer, userSH, passwordSH);
+                //loginShell(fromServer, toServer, userSH, passwordSH);
+                loginShell(fromServer, toServer, "", "");
 
                 float timeMillis;
                 long prevTime = 0;
@@ -373,22 +374,21 @@ public class Main extends AppCompatActivity {
                     loopTimeStart = System.currentTimeMillis();
 
                     //ip -s link show ptm0
-                    toServer.write(("ip -s link show ptm0" + "\r\n").getBytes());
+                    //toServer.write(("ip -s link show ptm0" + "\r\n").getBytes());
+                    toServer.write(("wan show statistics"+ "\r\n").getBytes());
                     toServer.flush();
 
                     line = fromServer.readLine();
-                    while (!line.contains("RX"))
+                    while (!line.contains("ptm0.2"))
                         line = fromServer.readLine();
-                    line = fromServer.readLine();
-
+                    while (!line.contains("RX bytes"))
+                        line = fromServer.readLine();
 
                     timeMillis = (float) ((System.currentTimeMillis() - prevTime)) / 1000F;
                     prevTime = System.currentTimeMillis();
 
-                    RXValue = Float.parseFloat(line.split(" ")[4]) / 1000000;
-                    fromServer.readLine();
-                    line = fromServer.readLine();
-                    TXValue = Float.parseFloat(line.split(" ")[4]) / 1000000;
+                    RXValue = Float.parseFloat(line.split(" ")[11].split(":")[1]) / 1000000;
+                    TXValue = Float.parseFloat(line.split(" ")[15].split(":")[1]) / 1000000;
 
                     downValue = (RXValue - oldRXValue) / timeMillis;
                     upValue = (TXValue - oldTXValue) / timeMillis;
@@ -620,7 +620,8 @@ public class Main extends AppCompatActivity {
                 while (true) {
                     line = fromServer.readLine();
                     builder.append(line);
-                    if (line.contains("#"))
+                    //if (line.contains("#"))
+                    if (line.contains(">"))
                         break;
                 }
                 return builder.toString();
